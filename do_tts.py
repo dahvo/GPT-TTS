@@ -35,41 +35,67 @@ def load_speaker_embedding(file_path):
         data = json.load(file)
     return data['speaker_embedding'], data['gpt_cond_latent']
 
+def split_sentence(sentence, max_length=250):
+    """
+    Split a sentence at the nearest comma to the midpoint for sentences longer than max_length.
+    If no comma is found, split at the nearest space.
+    """
+    if len(sentence) <= max_length:
+        return [sentence]
+
+    # Calculate the midpoint of the sentence
+    midpoint = len(sentence) // 2
+
+    # Find the nearest comma to the midpoint
+    left_comma = sentence.rfind(',', 0, midpoint)
+    right_comma = sentence.find(',', midpoint)
+
+    # Choose the closest comma to split
+    if left_comma != -1 or right_comma != -1:
+        # Prioritize splitting at a comma
+        if right_comma == -1 or (left_comma != -1 and midpoint - left_comma <= right_comma - midpoint):
+            split_index = left_comma
+        else:
+            split_index = right_comma
+    else:
+        # If no comma found, find the nearest space
+        left_space = sentence.rfind(' ', 0, midpoint)
+        right_space = sentence.find(' ', midpoint)
+        if right_space == -1 or (left_space != -1 and midpoint - left_space <= right_space - midpoint):
+            split_index = left_space
+        else:
+            split_index = right_space
+
+    # Split the sentence at the selected index
+    first_part = sentence[:split_index + 1].rstrip()  # Include the comma or space in the first part
+    second_part = sentence[split_index + 1:].lstrip()  # Start the second part without leading spaces
+
+    return [first_part, second_part]
+
+
 def split_text(text, max_tokens, tokenizer, language):
     """Split text into chunks that are within the max token limit."""
-    sentences = re.split(r'(?<=[.!?]) +', text.strip())
+    sentences = re.split(r'(?<=[.!?]) +', text.strip())  # Split text into sentences
     chunks = []
-    current_chunk = ""
     
     for sentence in sentences:
-        # Encode the current chunk plus the next sentence
-        tokens = tokenizer.encode(current_chunk + " " + sentence, lang="en")
-        if len(tokens) <= max_tokens:
-            current_chunk = (current_chunk + " " + sentence).strip()
-        else:
-            if current_chunk:
-                chunks.append(current_chunk)
-            current_chunk = sentence
-            # If the sentence itself exceeds max_tokens, we need to split it further
-            tokens = tokenizer.encode(current_chunk, lang="en")
-            if len(tokens) > max_tokens:
-                # Split the sentence into smaller parts (e.g., words)
-                words = current_chunk.split()
-                sub_chunk = ""
-                for word in words:
-                    tokens = tokenizer.encode(sub_chunk + " " + word, lang="en")
-                    if len(tokens) <= max_tokens:
-                        sub_chunk = (sub_chunk + " " + word).strip()
-                    else:
-                        if sub_chunk:
-                            chunks.append(sub_chunk)
-                        sub_chunk = word
-                if sub_chunk:
-                    chunks.append(sub_chunk)
-                current_chunk = ""
-    
-    if current_chunk:
-        chunks.append(current_chunk)
+        sentence_tokens = tokenizer.encode(sentence, lang=language)  # Tokenize each sentence
+
+        # If the sentence is too long, split it using split_sentence
+        while len(sentence_tokens) > max_tokens:
+            sentence_parts = split_sentence(sentence, max_length=max_tokens)
+            for part in sentence_parts:
+                part_tokens = tokenizer.encode(part, lang=language)
+                if len(part_tokens) > max_tokens:
+                    sentence = part  # Recursively split large parts
+                else:
+                    chunks.append(part)
+                    sentence = None
+                    break
+
+        # Add any remaining sentences that are within the token limit
+        if sentence:
+            chunks.append(sentence)
     
     return chunks
 
@@ -85,12 +111,12 @@ def synthesize_speech(text_chunks, language, speaker_embedding, gpt_cond_latent,
     for idx, text in enumerate(text_chunks):
         print(f"Synthesizing chunk {idx+1}/{len(text_chunks)}")
         # Synthesize speech for each chunk
+        # Remove the split_sentences argument
         out = model.inference(
             text,
             language,
             gpt_cond_latent_tensor,
             speaker_embedding_tensor,
-            split_sentences=False,  # Already split sentences
         )
         if "wav" not in out or len(out["wav"]) == 0:
             raise ValueError(f"No audio data generated from the model for chunk {idx+1}!")
@@ -100,6 +126,8 @@ def synthesize_speech(text_chunks, language, speaker_embedding, gpt_cond_latent,
     full_audio = np.concatenate(audio_outputs)
 
     return full_audio
+
+
 
 def postprocess(wav):
     """Post-process the output waveform."""
@@ -116,7 +144,7 @@ def postprocess(wav):
 
 if __name__ == "__main__":
     model = load_model()
-    speaker_embedding, gpt_cond_latent = load_speaker_embedding("normal_girl.json")
+    speaker_embedding, gpt_cond_latent = load_speaker_embedding("speakers/british_guy.json")
 
     text = ''' 
     My(14M) brother's(17M) girlfriend(17F) came over for dinner at our house tonight. My parents are from Taiwan and at home we normally eat with chopsticks. This is my first time meeting my brother's girlfriend; she's white, and I wasn't trying to be rude or anything, but when I was setting the table, I just handed her training chopsticks. She looks at me confused and then says thank you. I continue to set the table like nothing is wrong. We all finally sit down to eat, and as we are about to eat, my sister(19F) asked my brother's girlfriend if she used chopsticks before and if she needed a fork. My brother's girlfriend said, "I'm actually pretty good with chopsticks! I was just given training ones for some reason," and when the entire room all at once looks at me—I truly mean ALL AT ONCE—I then say, "What? It was a logical assumption." My mom gets up and gets her regular chopsticks, and after dinner, my mom told me I'm embarrassing and she probably thinks we hate her now.
@@ -124,7 +152,6 @@ if __name__ == "__main__":
 
     # Get the tokenizer from the model
     tokenizer = model.tokenizer
-    max_tokens = 400  # Maximum tokens allowed by the model
 
     # Split the text into manageable chunks
     text_chunks = split_text(text, max_tokens, tokenizer, language="en")
