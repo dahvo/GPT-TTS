@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import re
+import nltk
 import soundfile as sf
 import torch
 import tempfile
@@ -12,7 +13,7 @@ from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from TTS.utils.generic_utils import get_user_data_dir
 from TTS.utils.manage import ModelManager
-
+nltk.download('punkt_tab')  # Download the necessary data (only needed once)
 
 def postprocess(wav):
     """Post process the output waveform"""
@@ -128,8 +129,8 @@ def split_sentence(sentence, max_length=250):
     return [first_part, second_part]
 
 def split_text_into_sentences(text):
-    """Split the text into sentences using punctuation as a delimiter."""
-    return re.split(r'(?<=[.!?]) +|\n+', text.strip())
+    """Split the text into sentences using NLKTokenizer."""
+    return nltk.sent_tokenize(text)
 
 def generate_silence(duration_ms, sample_rate):
     """Generate a silence (zero amplitude) segment of a given duration in milliseconds."""
