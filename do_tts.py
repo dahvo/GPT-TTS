@@ -203,22 +203,11 @@ if __name__ == "__main__":
     
     # Process sentences and create subtitles
     model = load_model()
+  
+    # Load the text from a file
+    with open("text_example_preprocessed.txt", "r") as file:
+        text = file.read()
 
-    # *** TEXT INPUT START ***
-    text = """I'm (16m) currently in family therapy with my dad, his wife, my sister (14) and stepsiblings (10, 9 and 7). This blended family thing is pretty new still with my dad being remarried for 2 years. My mom died so I only have one home. And I'll be honest I was never excited or really into the whole blended family thing. But I know that's not my decision.
-
-All three of my stepsiblings have food allergies, two have bad ones. So the way we eat changed a lot. This included places we eat at that were a part of traditions. For most of my life we'd eat at this local noodle bar in town for the end of the school year and whenever we had a school thing (play, graduation, report card, etc) and we're not allowed to go there anymore because of the allergies. Even just with dad it's a no go. We can't bring ice cream into the house anymore because my stepsiblings can't eat it. Only my dad and his wife can prepare food so no more making a sandwich for myself either.
-
-Birthdays have changed. My sister and I can no longer eat at our preferred restaurant of choice because of my stepsiblings and we can't bring my favorite dish into the house either. So now it's a place that my stepsiblings love and "is acceptable" for their allergies. For two years dad has talked about how glad we are to make all these changes and how family is worth it.
-
-About four months ago his wife noticed my sister and I weren't engaged with "the family" in the way she thought we'd be. We didn't want to talk to her. She also noticed my sister had cut me and her out of some photos of all of us and used just me and her for her room's art wall. So she and dad decided we needed some family therapy.
-
-Since we started about two months ago officially there has been a lot of what's the problem, why are we there, explain the problem. And my dad has also talked about all the good from a blended family and changes were mentioned and he talks about how happy we all are to make them. Well, last week I got so sick of it and the therapist asked me if I was truly okay with them. And I went off. I said no I'm not. That I hate the changes. That it's unfair. That I never said I wanted my stepsiblings to celebrate my birthday more than I wanted my favorite foods. That these things were decided for me. I said I never would have made that decision because celebrating with them isn't important to me. I'd rather have a good time with the people I love and enjoy food that I love instead. And that I hate not being able to make a sandwich or buy snacks after school. I basically went off for the whole session between a rant and answering questions the therapist put to me.
-
-My dad is so mad at me for doing it and his wife was really upset because her kids heard it. But she was also upset because she accepted on some level I didn't want this ever. She's also kinda mad that I took up a whole session with my rant.
-
-AITA?"""
-    # *** TEXT INPUT END ***
 
     # Split the text into sentences
     sentences = split_text_into_sentences(text)
@@ -239,12 +228,13 @@ AITA?"""
     # Call process_sentences with the loaded embeddings
     full_wav_data, subtitles = process_sentences(sentences, model, language, speaker_embedding, gpt_cond_latent, sample_rate, sample_width)
 
-
+    file_name = "output"
+    
     pbar.close()
 
     # Specify the output file path for the synthesized speech
-    output_wav_file_path = f'output/output.wav'
-    subtitles_output_path = f'output/output_captions.srt'
+    output_wav_file_path = f'output/{file_name}.wav'
+    subtitles_output_path = f'output/{file_name}.srt'
 
     create_srt(subtitles, subtitles_output_path)
     # Save the full WAV file
