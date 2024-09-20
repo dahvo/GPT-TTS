@@ -8,11 +8,14 @@ import soundfile as sf
 import torch
 import tempfile
 import wave
+import logging
 from tqdm import tqdm
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from TTS.utils.generic_utils import get_user_data_dir
 from TTS.utils.manage import ModelManager
+from preprocess_text_with_gemini import preprocess_text
+
 
 nltk.download("punkt_tab")  # Download the necessary data (only needed once)
 
@@ -188,6 +191,9 @@ def process_sentences(
     subtitles = []
     start_time = 0.0
     pause_duration_ms = 500  # Adjust this value as needed
+    # Initialize progress bar
+    pbar = tqdm(total=len(sentences), desc="Processing sentences")
+
     for sentence in sentences:
         parts = split_sentence(sentence)
         subtitle_start = start_time
@@ -238,20 +244,24 @@ def process_sentences(
     return full_wav_data, subtitles
 
 
-if __name__ == "__main__":
-
+def text_to_tts(input_text, speaker_name, output_name):
     # Process sentences and create subtitles
     model = load_model()
 
-    # Load the text from a file
-    with open("text_example_preprocessed.txt", "r") as file:
-        text = file.read()
+    # Preprocess the text using gemini
+    text = preprocess_text(input_text)
+
+    if not text:
+        raise Exception("Preprocessed text not received from Gemini")
+
+    # For debugging
+    with open("last_gemini_preprocessed.txt", "w", encoding="utf-8") as file:
+        file.write(text)
 
     # Split the text into sentences
     sentences = split_text_into_sentences(text)
 
     language = "en"
-    speaker = "audiobook_lady.json"
 
     pbar = tqdm(total=len(sentences), desc="Processing Text")
 
@@ -260,7 +270,9 @@ if __name__ == "__main__":
     sample_width = 2  # 16 bits (2 bytes)
 
     # Load the speaker embedding and GPT condition latent once
-    speaker_embedding, gpt_cond_latent = load_speaker_embedding(f"speakers/{speaker}")
+    speaker_embedding, gpt_cond_latent = load_speaker_embedding(
+        f"speakers/{speaker_name}.json"
+    )
 
     # Call process_sentences with the loaded embeddings
     full_wav_data, subtitles = process_sentences(
@@ -273,16 +285,26 @@ if __name__ == "__main__":
         sample_width,
     )
 
-    file_name = "output"
-
     pbar.close()
 
     # Specify the output file path for the synthesized speech
-    output_wav_file_path = f"output/{file_name}.wav"
-    subtitles_output_path = f"output/{file_name}.srt"
+    output_wav_file_path = f"output/{output_name}.wav"
+    subtitles_output_path = f"output/{output_name}.srt"
 
     create_srt(subtitles, subtitles_output_path)
     # Save the full WAV file
     sf.write(output_wav_file_path, full_wav_data, sample_rate, subtype="PCM_16")
 
     print(f"Synthesized speech saved to {output_wav_file_path}")
+
+
+if __name__ == "__main__":
+
+    with open("text_example.txt", "r", encoding="utf-8") as file:
+        input_text = file.read()
+
+    speaker = "audiobook_lady"
+
+    output_name = "test_output"
+
+    text_to_tts(input_text, speaker, output_name)
