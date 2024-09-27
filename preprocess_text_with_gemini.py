@@ -34,6 +34,8 @@ def preprocess_text(text):
         You will receive text that is intended to be read aloud by a TTS system. Your job is to rewrite the text to make it easier for the TTS system to pronounce, while preserving the original meaning as much as possible.
 
         **Here are some specific things you should do:**
+        
+        * **When a sentence is greater than 250 characters, split it into multiple sentences:** This will make it easier for the TTS system to read the text with the correct intonation and emphasis.
 
         * **Expand contractions and abbreviations:** For example, change "I'm" to "I am" and "etc." to "etcetera".
         * **Rewrite words that are difficult to pronounce:** For example, change "February" to "Feb-roo-ary" and "Worcestershire" to "war-chester-shire".
