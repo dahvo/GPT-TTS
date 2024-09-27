@@ -8,6 +8,8 @@ This repository contains a set of Python scripts for processing text-to-speech (
     ```sh
     git clone https://github.com/dahvo/GPT-TTS.git
     cd GPT-TTS
+    git clone https://github.com/yourusername/tts-processing.git
+    cd tts-processing
     ```
 
 2. Install the required dependencies:
@@ -23,13 +25,17 @@ This repository contains a set of Python scripts for processing text-to-speech (
 from do_tts import text_to_tts()
 
 with open("text_example.txt" 
-#Or whatever the file is called that holds the text you are converting to TTS. This is setup so ANY SIZE of text, even a book should work without a hitch
+```
+Or whatever the file is called that holds the text you are converting to TTS. This is setup so ANY SIZE of text, even a book should work without a hitch
+```python
 , "r", encoding="utf-8") as file:
         input_text = file.read()
 
     speaker = "audiobook_lady"
-    #choose a speaker, either one from my examples or you may create your own speaker embedding using the provided files
-
+    ```
+Choose a speaker, either one from my examples or you may create your own speaker embedding using the provided files
+```
+```python
     output_name = "test_output"
     #Name of the output for the audio and srt file
 
