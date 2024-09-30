@@ -1,6 +1,8 @@
 # Text-to-Speech Processing
 
-This repository contains a set of Python scripts for processing text-to-speech (TTS) tasks, including splitting sentences, generating silence, and creating subtitles.
+This repository contains a set of Python scripts for processing text-to-speech (TTS) tasks, including splitting sentences, generating silence, and creating subtitles. 
+
+This is meant for long form text for example converting an E-book to a realistic sounding TTS audio book with matching subtitles.
 
 ## Installation
 
@@ -26,7 +28,7 @@ from do_tts import text_to_tts()
 
 with open("text_example.txt" 
 ```
-Or whatever the file is called that holds the text you are converting to TTS. This is setup so ANY SIZE of text, even a book should work without a hitch
+Or whatever the file is called that holds the text you are converting to TTS. The text to voice conversion is set up so that any size of text can be converted, even a book works without a hitch
 ```python
 , "r", encoding="utf-8") as file:
         input_text = file.read()
