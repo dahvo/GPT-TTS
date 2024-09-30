@@ -34,9 +34,9 @@ Or whatever the file is called that holds the text you are converting to TTS. Th
         input_text = file.read()
 
     speaker = "audiobook_lady"
-    ```
-Choose a speaker, either one from my examples or you may create your own speaker embedding using the provided files
 ```
+Choose a speaker, either one from my examples or you may create your own speaker embedding using clone_a_speaker.py
+
 ```python
     output_name = "test_output"
     #Name of the output for the audio and srt file
